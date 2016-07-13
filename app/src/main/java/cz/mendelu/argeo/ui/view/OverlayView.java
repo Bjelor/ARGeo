@@ -1,0 +1,205 @@
+package cz.mendelu.argeo.ui.view;
+
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.hardware.Camera;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
+import android.view.View;
+
+import cz.mendelu.argeo.util.ARLog;
+
+/**
+ * @author adamb_000
+ * @since 13. 7. 2016
+ */
+    //TODO: this class is unnecessary - use textviews for sensor data if needed
+    //TODO: LocationManager should probably be located in an Activity
+    //FIXME: bad behavior on screen orientation change
+public class OverlayView extends View {
+
+    private final static Location vut = new Location("manual");
+    static {
+        vut.setLatitude(49.224278d);
+        vut.setLongitude(16.578444d);
+        vut.setAltitude(450.5d);
+    }
+
+    public static final String TAG = OverlayView.class.getSimpleName();
+    String accelData = "Accelerometer Data";
+    String compassData = "Compass Data";
+    String gyroData = "Gyro Data";
+
+    Location lastLocation = null;
+    LocationManager locationManager;
+
+    float[] lastAccelerometer;
+    float[] lastCompass;
+    float[] lastGyro;
+
+    final Paint contentPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    final Paint targetPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+    public OverlayView(Context context) {
+        super(context);
+
+        targetPaint.setColor(0xFF00FF00);
+
+        SensorManager sensors = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+        Sensor accelSensor = sensors.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        Sensor compassSensor = sensors.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        Sensor gyroSensor = sensors.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+
+        boolean isAccelAvailable = sensors.registerListener(mSensorEventListener, accelSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        boolean isCompassAvailable = sensors.registerListener(mSensorEventListener, compassSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        boolean isGyroAvailable = sensors.registerListener(mSensorEventListener, gyroSensor, SensorManager.SENSOR_DELAY_NORMAL);
+
+        locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        Criteria criteria = new Criteria();
+        criteria.setAccuracy(Criteria.ACCURACY_FINE);
+        criteria.setPowerRequirement(Criteria.NO_REQUIREMENT);
+
+        String best = locationManager.getBestProvider(criteria, true);
+
+        ARLog.v("[%s]::[Best provider: %s]", TAG, best);
+
+        //FIXME: move LocationManager to an Activity?
+        try {
+            locationManager.requestLocationUpdates(best, 50, 0, mLocationListener);
+            if (lastLocation == null) {
+                lastLocation = locationManager.getLastKnownLocation(best);
+            }
+        } catch (SecurityException e){
+            ARLog.e("[%s]::[SecurityException: %s]", TAG, e.getMessage());
+        }
+
+    }
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+
+        contentPaint.setTextAlign(Paint.Align.CENTER);
+        contentPaint.setTextSize(20);
+        contentPaint.setColor(Color.RED);
+        canvas.drawText(accelData, canvas.getWidth() / 2, canvas.getHeight() / 4, contentPaint);
+        canvas.drawText(compassData, canvas.getWidth() / 2, canvas.getHeight() / 2, contentPaint);
+        canvas.drawText(gyroData, canvas.getWidth() / 2, (canvas.getHeight() * 3) / 4, contentPaint);
+
+        float rotation[] = new float[9];
+        float identity[] = new float[9];
+
+        if (ArDisplayView.getCamera() == null){
+            ARLog.e("[%s]::[camera was null]",TAG);
+            return;
+        }
+        Camera.Parameters params = ArDisplayView.getCamera().getParameters();
+        float verticalFOV = params.getVerticalViewAngle();
+
+        boolean gotRotation = SensorManager.getRotationMatrix(rotation,
+                identity, lastAccelerometer, lastCompass);
+
+        if (gotRotation) {
+            float cameraRotation[] = new float[9];
+            // remap such that the camera is pointing straight down the Y axis
+            SensorManager.remapCoordinateSystem(rotation, SensorManager.AXIS_X,
+                    SensorManager.AXIS_Z, cameraRotation);
+
+            // orientation vector
+            float orientation[] = new float[3];
+            SensorManager.getOrientation(cameraRotation, orientation);
+
+            if(lastLocation == null){
+                ARLog.e("[%s]::[lastLocation was null]",TAG);
+                return;
+            }
+
+            float curBearingToMW = lastLocation.bearingTo(vut);
+            float horizontalFOV = params.getHorizontalViewAngle();
+
+            // use roll for screen rotation
+            canvas.rotate((float)(0.0f- Math.toDegrees(orientation[2])));
+            // Translate, but normalize for the FOV of the camera -- basically, pixels per degree, times degrees == pixels
+            float dx = (float) ( (canvas.getWidth()/ horizontalFOV) * (Math.toDegrees(orientation[0])-curBearingToMW));
+            float dy = (float) ( (canvas.getHeight()/ verticalFOV) * Math.toDegrees(orientation[1])) ;
+
+            // wait to translate the dx so the horizon doesn't get pushed off
+            canvas.translate(0.0f, 0.0f-dy);
+
+            // make our line big enough to draw regardless of rotation and translation
+            canvas.drawLine(0f - canvas.getHeight(), canvas.getHeight()/2, canvas.getWidth()+canvas.getHeight(), canvas.getHeight()/2, targetPaint);
+
+            // now translate the dx
+            canvas.translate(0.0f-dx, 0.0f);
+
+            // draw our point -- we've rotated and translated this to the right spot already
+            canvas.drawCircle(canvas.getWidth()/2, canvas.getHeight()/2, 8.0f, targetPaint);
+        }
+    }
+
+    SensorEventListener mSensorEventListener = new SensorEventListener() {
+        @Override
+        public void onSensorChanged(SensorEvent sensorEvent) {
+            StringBuilder msg = new StringBuilder(sensorEvent.sensor.getName()).append(" ");
+            for(float value: sensorEvent.values)
+            {
+                msg.append("[").append(value).append("]");
+            }
+
+            switch(sensorEvent.sensor.getType())
+            {
+                case Sensor.TYPE_ACCELEROMETER:
+                    accelData = msg.toString();
+                    lastAccelerometer = sensorEvent.values;
+                    break;
+                case Sensor.TYPE_GYROSCOPE:
+                    gyroData = msg.toString();
+                    lastGyro = sensorEvent.values;
+                    break;
+                case Sensor.TYPE_MAGNETIC_FIELD:
+                    compassData = msg.toString();
+                    lastCompass = sensorEvent.values;
+                    break;
+            }
+
+            OverlayView.this.invalidate();
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int i) {
+            //empty
+        }
+    };
+
+    LocationListener mLocationListener = new LocationListener() {
+        @Override
+        public void onLocationChanged(Location location) {
+            lastLocation = location;
+        }
+
+        @Override
+        public void onStatusChanged(String s, int i, Bundle bundle) {
+            //empty
+        }
+
+        @Override
+        public void onProviderEnabled(String s) {
+            //empty
+        }
+
+        @Override
+        public void onProviderDisabled(String s) {
+            //empty
+        }
+    };
+
+}
