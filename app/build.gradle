@@ -3,7 +3,7 @@ apply plugin: 'com.neenbedankt.android-apt'
 
 android {
     compileSdkVersion 24
-    buildToolsVersion "24.0.0"
+    buildToolsVersion "24.0.1"
 
     defaultConfig {
         applicationId "cz.mendelu.argeo"
@@ -21,16 +21,30 @@ android {
 }
 
 dependencies {
-    def SUPPORT_LIB_VERSION = "24.0.0"
+    def SUPPORT_LIB_VERSION = "24.1.0"
     def BUTTER_KNIFE_VERSION = "8.2.1"
-
+    def RETROFIT_VERSION = "2.1.0"
+    def DAGGER_VERSION = "2.2"
 
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:24.0.0'
 
+    compile "com.android.support:appcompat-v7:$SUPPORT_LIB_VERSION"
+
+    //Retrofit
+    compile "com.squareup.retrofit2:retrofit:$RETROFIT_VERSION"
+    compile "com.squareup.retrofit2:converter-gson:$RETROFIT_VERSION"
+    compile "com.squareup.retrofit2:adapter-rxjava:$RETROFIT_VERSION"
+
+    //RxJava
+    compile 'io.reactivex:rxandroid:1.2.1'
+    compile 'io.reactivex:rxjava:1.1.6'
+
+    //Dagger
+    compile  "com.google.dagger:dagger:$DAGGER_VERSION"
+    provided 'org.glassfish:javax.annotation:10.0-b28' //Required by Dagger2
+
+    //ButterKnife
     compile "com.jakewharton:butterknife:$BUTTER_KNIFE_VERSION"
-
-    //apt
-    apt "com.jakewharton:butterknife-compiler:$BUTTER_KNIFE_VERSION"
+    apt "com.jakewharton:butterknife-compiler:$BUTTER_KNIFE_VERSION" //apt
 }

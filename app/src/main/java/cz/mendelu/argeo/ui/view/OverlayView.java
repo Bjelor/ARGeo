@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.hardware.Camera;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -27,14 +26,17 @@ import cz.mendelu.argeo.util.ARLog;
     //FIXME: bad behavior on screen orientation change
 public class OverlayView extends View {
 
-    private final static Location vut = new Location("manual");
+    private static final Location vut = new Location("manual");
     static {
         vut.setLatitude(49.224278d);
         vut.setLongitude(16.578444d);
         vut.setAltitude(450.5d);
     }
 
+    private static final float BETA = 0.2f;
     public static final String TAG = OverlayView.class.getSimpleName();
+    public static final int BUFFER_SIZE = 5;
+
     String accelData = "Accelerometer Data";
     String compassData = "Compass Data";
     String gyroData = "Gyro Data";
@@ -102,11 +104,17 @@ public class OverlayView extends View {
             ARLog.e("[%s]::[camera was null]",TAG);
             return;
         }
-        Camera.Parameters params = ArDisplayView.getCamera().getParameters();
-        float verticalFOV = params.getVerticalViewAngle();
 
-        boolean gotRotation = SensorManager.getRotationMatrix(rotation,
-                identity, lastAccelerometer, lastCompass);
+        float verticalFOV = ArDisplayView.getCamera().getVerticalAngle();
+
+        boolean gotRotation;
+
+        try {
+            gotRotation = SensorManager.getRotationMatrix(rotation,
+                    identity, lastAccelerometer, lastCompass);
+        } catch (NullPointerException e) {
+            gotRotation = false;
+        }
 
         if (gotRotation) {
             float cameraRotation[] = new float[9];
@@ -117,6 +125,7 @@ public class OverlayView extends View {
             // orientation vector
             float orientation[] = new float[3];
             SensorManager.getOrientation(cameraRotation, orientation);
+//            addOrientationToBuffer(orientation);
 
             if(lastLocation == null){
                 ARLog.e("[%s]::[lastLocation was null]",TAG);
@@ -124,7 +133,7 @@ public class OverlayView extends View {
             }
 
             float curBearingToMW = lastLocation.bearingTo(vut);
-            float horizontalFOV = params.getHorizontalViewAngle();
+            float horizontalFOV = ArDisplayView.getCamera().getHorizontalAngle();
 
             // use roll for screen rotation
             canvas.rotate((float)(0.0f- Math.toDegrees(orientation[2])));
@@ -146,6 +155,15 @@ public class OverlayView extends View {
         }
     }
 
+    //TODO this will be requiring some tweaks as the app is slow to respond to sensor changes
+    private float[] lowPass( float[] input, float[] output ) {
+        if ( output == null ) return input;
+        for ( int i=0; i<input.length; i++ ) {
+            output[i] = output[i] + BETA * (input[i] - output[i]);
+        }
+        return output;
+    }
+
     SensorEventListener mSensorEventListener = new SensorEventListener() {
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
@@ -159,15 +177,17 @@ public class OverlayView extends View {
             {
                 case Sensor.TYPE_ACCELEROMETER:
                     accelData = msg.toString();
-                    lastAccelerometer = sensorEvent.values;
+                    lastAccelerometer = lowPass(sensorEvent.values.clone(), lastAccelerometer);
                     break;
                 case Sensor.TYPE_GYROSCOPE:
                     gyroData = msg.toString();
-                    lastGyro = sensorEvent.values;
+//                    lastGyro = sensorEvent.values;
+                    lastGyro = lowPass(sensorEvent.values.clone(), lastGyro);
                     break;
                 case Sensor.TYPE_MAGNETIC_FIELD:
                     compassData = msg.toString();
-                    lastCompass = sensorEvent.values;
+//                    lastCompass = sensorEvent.values;
+                    lastCompass = lowPass(sensorEvent.values.clone(), lastCompass);
                     break;
             }
 
