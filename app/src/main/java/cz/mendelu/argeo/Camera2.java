@@ -23,6 +23,7 @@ import javax.inject.Singleton;
 import cz.mendelu.argeo.util.ARLog;
 
 /**
+ * This object wraps an {@link android.hardware.camera2} object for devices with API lvl 21 or higher
  * @author adamb_000
  * @since 20. 7. 2016
  */
@@ -31,7 +32,15 @@ import cz.mendelu.argeo.util.ARLog;
 @TargetApi(21)
 public class Camera2 implements Camera {
 
+    // ========================================================================
+    // =====================   C  O  N  S  T  A  N  T  S   ====================
+    // ========================================================================
+
     public static final String TAG = Camera2.class.getSimpleName();
+
+    // ========================================================================
+    // ========================   M  E  M  B  E  R  S   =======================
+    // ========================================================================
 
     private CameraDevice mCameraDevice;
     private CameraManager mCameraManager;
@@ -50,6 +59,10 @@ public class Camera2 implements Camera {
     private int mHeight = -1;
 
     private Context mContext;
+
+    // ========================================================================
+    // =======================    M  E  T  H  O  D  S   =======================
+    // ========================================================================
 
     public Camera2(Context context){
         this.mContext = context;
@@ -100,6 +113,7 @@ public class Camera2 implements Camera {
         }
     }
 
+    //FIXME: is this even useful in the fisrt place?
     @Override
     public void setOrientation(int orientation) {
 
@@ -126,7 +140,6 @@ public class Camera2 implements Camera {
 
         if(mCameraManager != null && mHolder != null) {
             try {
-//                CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraManager.getCameraIdList()[0]);
                 Size[] outputSizes = mCameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).getOutputSizes(SurfaceHolder.class);
                 for (Size s : outputSizes) {
                     if ((s.getHeight() <= height) && (s.getWidth() <= width)) {
@@ -139,8 +152,6 @@ public class Camera2 implements Camera {
             }
         }
     }
-
-
 
     @Override
     public void startPreview() {
@@ -165,6 +176,36 @@ public class Camera2 implements Camera {
         }
     }
 
+    //FIXME: this isn't a proper implementation. Do research on getting camera2 FOV
+    @Override
+    public float getVerticalAngle() {
+//        ARLog.d("[%s]::[getVerticalAngle()]", TAG);
+        try {
+            return mCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+        } catch (NullPointerException e) {
+            ARLog.e("[%s]::[getVerticalAngle()]::[NullPointerException: %s]", TAG, e.getMessage());
+        }
+        return 49;
+    }
+
+    //FIXME: this isn't a proper implementation. Do research on getting camera2 FOV
+    @Override
+    public float getHorizontalAngle() {
+//        ARLog.d("[%s]::[getHorizontalAngle()]", TAG);
+        try {
+            return mCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+        } catch (NullPointerException e) {
+            ARLog.e("[%s]::[getVerticalAngle()]::[NullPointerException: %s]", TAG, e.getMessage());
+        }
+        return 60;
+    }
+
+    // ------------------------------------------------------------------------
+    // ---  /\  E N D : P U B L I C   F U N C T I O N  ---------------  ||  ---
+    // --- /||\ ------------------------------------------------------ \||/ ---
+    // ---  ||  ---------------------------- H E L P   F U N C T I O N  \/  ---
+    // ------------------------------------------------------------------------
+
     private void startCaptureSession() {
         ARLog.d("[%s]::[startCaptureSession()]", TAG);
         if(mCameraDevice == null || mCameraCaptureSession == null) {
@@ -184,29 +225,9 @@ public class Camera2 implements Camera {
         }
     }
 
-    @Override
-    public float getVerticalAngle() {
-//        ARLog.d("[%s]::[getVerticalAngle()]", TAG);
-        try {
-//            CameraCharacteristics camchars = mCameraManager.getCameraCharacteristics(mCameraManager.getCameraIdList()[0]);
-            return mCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-        } catch (NullPointerException e) {
-            ARLog.e("[%s]::[getVerticalAngle()]::[NullPointerException: %s]", TAG, e.getMessage());
-        }
-        return 49;
-    }
-
-    @Override
-    public float getHorizontalAngle() {
-//        ARLog.d("[%s]::[getHorizontalAngle()]", TAG);
-        try {
-            return mCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-        } catch (NullPointerException e) {
-            ARLog.e("[%s]::[getVerticalAngle()]::[NullPointerException: %s]", TAG, e.getMessage());
-        }
-        return 60;
-    }
-
+    // ========================================================================
+    // =====================   C  A  L  L  B  A  C  K  S   ====================
+    // ========================================================================
 
     private CameraDevice.StateCallback mCameraStateCallback = new CameraDevice.StateCallback() {
         @Override

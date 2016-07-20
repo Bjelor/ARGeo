@@ -10,16 +10,28 @@ import javax.inject.Singleton;
 import cz.mendelu.argeo.util.ARLog;
 
 /**
+ * This object wraps an {@link android.hardware.Camera} object for devices with API lvl lower than 21
  * @author adamb_000
  * @since 20. 7. 2016
  */
-
 @Singleton
 public class Camera1 implements Camera {
 
+    // ========================================================================
+    // =====================   C  O  N  S  T  A  N  T  S   ====================
+    // ========================================================================
+
     public static final String TAG = Camera1.class.getSimpleName();
 
+    // ========================================================================
+    // ========================   M  E  M  B  E  R  S   =======================
+    // ========================================================================
+
     private android.hardware.Camera mCamera;
+
+    // ========================================================================
+    // =======================    M  E  T  H  O  D  S   =======================
+    // ========================================================================
 
     @Override
     public void release() {

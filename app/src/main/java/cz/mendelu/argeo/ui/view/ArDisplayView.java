@@ -9,22 +9,38 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 
+import javax.inject.Singleton;
+
 import cz.mendelu.argeo.Camera;
 import cz.mendelu.argeo.Camera1;
 import cz.mendelu.argeo.Camera2;
+import dagger.Provides;
 
 /**
+ * A {@link SurfaceView} for viewing real-world camera feed. Is currently overlayed by {@link OverlayView}
  * @author adamb_000
  * @since 13. 7. 2016
  */
 public class ArDisplayView extends SurfaceView {
 
+    // ========================================================================
+    // =====================   C  O  N  S  T  A  N  T  S   ====================
+    // ========================================================================
+
     public static final String TAG = ArDisplayView.class.getSimpleName();
+
+    // ========================================================================
+    // ========================   M  E  M  B  E  R  S   =======================
+    // ========================================================================
 
     //FIXME: possibly move Camera altogether to Activity or App
     static Camera mCamera;
     SurfaceHolder mHolder;
     Context mContext;
+
+    // ========================================================================
+    // =======================    M  E  T  H  O  D  S   =======================
+    // ========================================================================
 
     public ArDisplayView(Context context) {
         super(context);
@@ -46,6 +62,16 @@ public class ArDisplayView extends SurfaceView {
     public ArDisplayView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
     }
+
+    @Provides
+    @Singleton
+    public static Camera getCamera(){
+        return mCamera;
+    }
+
+    // ========================================================================
+    // =====================   C  A  L  L  B  A  C  K  S   ====================
+    // ========================================================================
 
     private SurfaceHolder.Callback mSurfaceHolderCallback = new SurfaceHolder.Callback() {
 
@@ -71,17 +97,8 @@ public class ArDisplayView extends SurfaceView {
 
             mCamera.setOrientation(degrees);
 
-//            Camera.CameraInfo info = new Camera.CameraInfo();
-//            Camera.getCameraInfo(Camera.CameraInfo.CAMERA_FACING_BACK, info);
-//
-//            //cam
-//            mCamera.setDisplayOrientation((info.orientation - degrees + 360) % 360);
+            mCamera.setPreviewDisplay(mHolder);
 
-//            try {
-                mCamera.setPreviewDisplay(mHolder);
-//            } catch (IOException e) {
-//                ARLog.e("[%s]::[surfaceCreated exception: %s]", TAG, e.getMessage());
-//            }
             mCamera.startPreview();
         }
 
@@ -90,22 +107,7 @@ public class ArDisplayView extends SurfaceView {
             if(mCamera == null) {
                 return;
             }
-
-//            Camera.Parameters params = mCamera.getParameters();
-//            List<Camera.Size> prevSizes = params.getSupportedPreviewSizes();
-//            for (Camera.Size s : prevSizes)
-//            {
-//                if((s.height <= height) && (s.width <= width))
-//                {
-//                    params.setPreviewSize(s.width, s.height);
-//                    break;
-//                }
-//            }
-
             mCamera.setPreviewDisplaySize(width, height);
-
-//            mCamera.setParameters(params);
-//            mCamera.startPreview();
         }
 
         public void surfaceDestroyed(SurfaceHolder holder) {
@@ -118,7 +120,4 @@ public class ArDisplayView extends SurfaceView {
         }
     };
 
-    public static Camera getCamera(){
-        return mCamera;
-    }
 }

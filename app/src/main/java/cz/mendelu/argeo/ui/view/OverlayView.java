@@ -18,24 +18,35 @@ import android.view.View;
 import cz.mendelu.argeo.util.ARLog;
 
 /**
+ * A temporary overlay providing virtual data. Will be replaced by something more suitable in the future.
  * @author adamb_000
  * @since 13. 7. 2016
  */
-    //TODO: this class is unnecessary - use textviews for sensor data if needed
+    //TODO: this class appears unnecessary - use textviews for sensor data if needed
     //TODO: LocationManager should probably be located in an Activity
     //FIXME: bad behavior on screen orientation change
 public class OverlayView extends View {
 
-    private static final Location vut = new Location("manual");
+    // ========================================================================
+    // =====================   C  O  N  S  T  A  N  T  S   ====================
+    // ========================================================================
+
+    public static final String TAG = OverlayView.class.getSimpleName();
+
+    static final Location vut = new Location("manual");
     static {
         vut.setLatitude(49.224278d);
         vut.setLongitude(16.578444d);
         vut.setAltitude(450.5d);
     }
 
-    private static final float BETA = 0.2f;
-    public static final String TAG = OverlayView.class.getSimpleName();
-    public static final int BUFFER_SIZE = 5;
+    final float BETA = 0.2f;
+    final Paint contentPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    final Paint targetPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+    // ========================================================================
+    // ========================   M  E  M  B  E  R  S   =======================
+    // ========================================================================
 
     String accelData = "Accelerometer Data";
     String compassData = "Compass Data";
@@ -48,8 +59,10 @@ public class OverlayView extends View {
     float[] lastCompass;
     float[] lastGyro;
 
-    final Paint contentPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    final Paint targetPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+    // ========================================================================
+    // =======================    M  E  T  H  O  D  S   =======================
+    // ========================================================================
 
     public OverlayView(Context context) {
         super(context);
@@ -163,6 +176,10 @@ public class OverlayView extends View {
         }
         return output;
     }
+
+    // ========================================================================
+    // =====================   L  I  S  T  E  N  E  R  S   ====================
+    // ========================================================================
 
     SensorEventListener mSensorEventListener = new SensorEventListener() {
         @Override
