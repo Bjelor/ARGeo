@@ -33,6 +33,9 @@ public class OverlayView extends View {
 
     public static final String TAG = OverlayView.class.getSimpleName();
 
+    /**
+     * Faculty of Mechanical Engineering location
+     */
     static final Location vut = new Location("manual");
     static {
         vut.setLatitude(49.224278d);
