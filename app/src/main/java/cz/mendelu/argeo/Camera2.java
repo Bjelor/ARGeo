@@ -30,7 +30,7 @@ import cz.mendelu.argeo.util.ARLog;
 
 @Singleton
 @TargetApi(21)
-public class Camera2 implements Camera {
+public class Camera2 implements CameraWrapper {
 
     // ========================================================================
     // =====================   C  O  N  S  T  A  N  T  S   ====================
@@ -116,7 +116,8 @@ public class Camera2 implements Camera {
     //FIXME: is this even useful in the fisrt place?
     @Override
     public void setOrientation(int orientation) {
-
+//        return mCameraCharacteristics.get(CameraCharacteristics.LENS_POSE_ROTATION);
+//        int rotation = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
     }
 
     @Override
@@ -175,29 +176,19 @@ public class Camera2 implements Camera {
             shouldStartPreview = true;
         }
     }
-
-    //FIXME: this isn't a proper implementation. Do research on getting camera2 FOV
+    
     @Override
     public float getVerticalAngle() {
 //        ARLog.d("[%s]::[getVerticalAngle()]", TAG);
-        try {
-            return mCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-        } catch (NullPointerException e) {
-            ARLog.e("[%s]::[getVerticalAngle()]::[NullPointerException: %s]", TAG, e.getMessage());
-        }
-        return 49;
+        float sensorWidth = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE).getWidth();
+        return getCameraFieldOfViewInternal(sensorWidth);
     }
 
-    //FIXME: this isn't a proper implementation. Do research on getting camera2 FOV
     @Override
     public float getHorizontalAngle() {
 //        ARLog.d("[%s]::[getHorizontalAngle()]", TAG);
-        try {
-            return mCameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-        } catch (NullPointerException e) {
-            ARLog.e("[%s]::[getVerticalAngle()]::[NullPointerException: %s]", TAG, e.getMessage());
-        }
-        return 60;
+        float sensorHeight = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE).getHeight();
+        return getCameraFieldOfViewInternal(sensorHeight);
     }
 
     // ------------------------------------------------------------------------
@@ -205,6 +196,35 @@ public class Camera2 implements Camera {
     // --- /||\ ------------------------------------------------------ \||/ ---
     // ---  ||  ---------------------------- H E L P   F U N C T I O N  \/  ---
     // ------------------------------------------------------------------------
+
+    /**
+     * taken from wikitude SDK samples
+     * @return float FOV of the camera
+     */
+    private float getCameraFieldOfViewInternal(float sensorSize)
+    {
+        try
+        {
+//            for (String cameraId : mCameraManager.getCameraIdList())
+//            {
+//                CameraCharacteristics cameraCharacteristics = mCameraManager.getCameraCharacteristics(cameraId);
+//
+//                int cameraOrientation = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
+//                if (cameraOrientation == CameraCharacteristics.LENS_FACING_BACK)
+//                {
+//                    float sensorWidth = mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_PHYSICAL_SIZE).getWidth();
+                    float focalLength = mCameraCharacteristics.get(CameraCharacteristics.LENS_INFO_AVAILABLE_FOCAL_LENGTHS)[0];
+                    return (float)Math.toDegrees(2 * Math.atan(0.5 * sensorSize / focalLength));
+//                }
+//            }
+        }
+        catch (NullPointerException e)
+        {
+            e.printStackTrace();
+        }
+
+        return 0.0f;
+    }
 
     private void startCaptureSession() {
         ARLog.d("[%s]::[startCaptureSession()]", TAG);

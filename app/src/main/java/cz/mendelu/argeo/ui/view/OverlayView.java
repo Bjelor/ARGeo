@@ -71,6 +71,9 @@ public class OverlayView extends View {
         super(context);
 
         targetPaint.setColor(0xFF00FF00);
+        contentPaint.setTextAlign(Paint.Align.CENTER);
+        contentPaint.setTextSize(20);
+        contentPaint.setColor(Color.RED);
 
         SensorManager sensors = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         Sensor accelSensor = sensors.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -106,9 +109,7 @@ public class OverlayView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        contentPaint.setTextAlign(Paint.Align.CENTER);
-        contentPaint.setTextSize(20);
-        contentPaint.setColor(Color.RED);
+
         canvas.drawText(accelData, canvas.getWidth() / 2, canvas.getHeight() / 4, contentPaint);
         canvas.drawText(compassData, canvas.getWidth() / 2, canvas.getHeight() / 2, contentPaint);
         canvas.drawText(gyroData, canvas.getWidth() / 2, (canvas.getHeight() * 3) / 4, contentPaint);
@@ -141,7 +142,6 @@ public class OverlayView extends View {
             // orientation vector
             float orientation[] = new float[3];
             SensorManager.getOrientation(cameraRotation, orientation);
-//            addOrientationToBuffer(orientation);
 
             if(lastLocation == null){
                 ARLog.e("[%s]::[lastLocation was null]",TAG);
@@ -150,6 +150,7 @@ public class OverlayView extends View {
 
             float curBearingToMW = lastLocation.bearingTo(vut);
             float horizontalFOV = ArDisplayView.getCamera().getHorizontalAngle();
+            ARLog.d("[%s]::[v: %s, h:%s]", TAG, verticalFOV, horizontalFOV);
 
             // use roll for screen rotation
             canvas.rotate((float)(0.0f- Math.toDegrees(orientation[2])));
@@ -167,7 +168,7 @@ public class OverlayView extends View {
             canvas.translate(0.0f-dx, 0.0f);
 
             // draw our point -- we've rotated and translated this to the right spot already
-            canvas.drawCircle(canvas.getWidth()/2, canvas.getHeight()/2, 8.0f, targetPaint);
+            canvas.drawCircle(canvas.getWidth()/2, canvas.getHeight()/2, 8.0f, contentPaint);
         }
     }
 

@@ -15,7 +15,7 @@ import cz.mendelu.argeo.util.ARLog;
  * @since 20. 7. 2016
  */
 @Singleton
-public class Camera1 implements Camera {
+public class Camera1 implements CameraWrapper {
 
     // ========================================================================
     // =====================   C  O  N  S  T  A  N  T  S   ====================

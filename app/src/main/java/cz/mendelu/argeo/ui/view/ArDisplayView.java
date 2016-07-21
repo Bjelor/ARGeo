@@ -11,7 +11,7 @@ import android.view.WindowManager;
 
 import javax.inject.Singleton;
 
-import cz.mendelu.argeo.Camera;
+import cz.mendelu.argeo.CameraWrapper;
 import cz.mendelu.argeo.Camera1;
 import cz.mendelu.argeo.Camera2;
 import dagger.Provides;
@@ -34,7 +34,7 @@ public class ArDisplayView extends SurfaceView {
     // ========================================================================
 
     //FIXME: possibly move Camera altogether to Activity or App
-    static Camera mCamera;
+    static CameraWrapper mCamera;
     SurfaceHolder mHolder;
     Context mContext;
 
@@ -65,7 +65,7 @@ public class ArDisplayView extends SurfaceView {
 
     @Provides
     @Singleton
-    public static Camera getCamera(){
+    public static CameraWrapper getCamera(){
         return mCamera;
     }
 

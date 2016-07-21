@@ -31,6 +31,9 @@ dependencies {
 
     compile "com.android.support:appcompat-v7:$SUPPORT_LIB_VERSION"
 
+    //Wikitude
+    compile (name: 'wikitudesdk', ext:'aar')
+
     //Retrofit
     compile "com.squareup.retrofit2:retrofit:$RETROFIT_VERSION"
     compile "com.squareup.retrofit2:converter-gson:$RETROFIT_VERSION"
@@ -47,4 +50,10 @@ dependencies {
     //ButterKnife
     compile "com.jakewharton:butterknife:$BUTTER_KNIFE_VERSION"
     apt "com.jakewharton:butterknife-compiler:$BUTTER_KNIFE_VERSION" //apt
+}
+
+repositories {
+    flatDir{
+        dirs 'libs'
+    }
 }
