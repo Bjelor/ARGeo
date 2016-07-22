@@ -14,7 +14,7 @@ import dagger.Provides;
 @Singleton
 public class App extends Application{
 
-    private final static String WIKITUDE_KEY = "okLQUponz7zaQ5sYMrlnr1tAoluxVu0VOFZh3AMe2LuLhdSE" +
+    public final static String WIKITUDE_KEY = "okLQUponz7zaQ5sYMrlnr1tAoluxVu0VOFZh3AMe2LuLhdSE" +
             "Mdb2xHhoMa0/y4RazHSJLaq+tWP46KFNII8M8Du1UG+cjwRbRRm7uHT1hOxIj8HQtIrCquVk8UbRJvW178H" +
             "8Wg/EPWpMuz4riyVMFyFWM5SKE2z+bdA99udI1MhTYWx0ZWRfX3IhlojA4mYspKwEKqeXbLgwzErj1tVGVG" +
             "JPEe25gJptPG/yE42Il4WS0oYHcDhqzNVIgAbwWTJJNpEc47NXmmNYzXG+UZTYd0N8kck4lepAt1v404rJW" +

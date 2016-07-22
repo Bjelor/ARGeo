@@ -9,4 +9,9 @@
         android:layout_height="match_parent">
     </FrameLayout>
 
+    <com.wikitude.architect.ArchitectView
+        android:id="@+id/arview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
 </RelativeLayout>

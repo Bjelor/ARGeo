@@ -176,7 +176,7 @@ public class Camera2 implements CameraWrapper {
             shouldStartPreview = true;
         }
     }
-    
+
     @Override
     public float getVerticalAngle() {
 //        ARLog.d("[%s]::[getVerticalAngle()]", TAG);

@@ -8,12 +8,14 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.FrameLayout;
 
+import com.wikitude.architect.ArchitectView;
+import com.wikitude.architect.StartupConfiguration;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.Unbinder;
+import cz.mendelu.argeo.App;
 import cz.mendelu.argeo.R;
-import cz.mendelu.argeo.ui.view.ArDisplayView;
-import cz.mendelu.argeo.ui.view.OverlayView;
 import cz.mendelu.argeo.util.ARLog;
 
 public class MainActivity extends AppCompatActivity {
@@ -29,6 +31,9 @@ public class MainActivity extends AppCompatActivity {
     // ========================================================================
     @BindView(R.id.ar_view_pane)
     FrameLayout mArViewPane;
+
+    @BindView(R.id.arview)
+    ArchitectView mArView;
 
     Unbinder mUnbinder;
 
@@ -98,11 +103,15 @@ public class MainActivity extends AppCompatActivity {
     // ---  ||  ---------------------------- H E L P   F U N C T I O N  \/  ---
     // ------------------------------------------------------------------------
     private void initArViews(){
-        ArDisplayView arDisplay = new ArDisplayView(this);
-        mArViewPane.addView(arDisplay);
 
-        OverlayView arContent = new OverlayView(getApplicationContext());
-        mArViewPane.addView(arContent);
+        final StartupConfiguration config = new StartupConfiguration(App.WIKITUDE_KEY);
+        mArView.onCreate(config);
+
+//        ArDisplayView arDisplay = new ArDisplayView(this);
+//        mArViewPane.addView(arDisplay);
+//
+//        OverlayView arContent = new OverlayView(getApplicationContext());
+//        mArViewPane.addView(arContent);
     }
 
     private boolean arePermissionsGranted() {
