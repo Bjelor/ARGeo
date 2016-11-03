@@ -24,8 +24,8 @@ public class App extends Application{
             "djc2s1RtYjaOa5bWqrHqs5c0CjWqOdEk33QIL9pn3hUdVdATur8kdCirxkmVoiihYX3DJXq+KGta4ftLZba" +
             "LRf/diflP+8yt91DU9nDNyDKISwf3Do/mucmVmhAYMlh6QWnyOcbos=";
 
-    private static CameraProvider sCameraProvider;
-    private static App sApp;
+//    private static CameraProvider sCameraProvider;
+//    private static App sApp;
 
     @Override
     public void onCreate() {
@@ -35,26 +35,26 @@ public class App extends Application{
 //        wikitudeSDK.onCreate(getApplicationContext(), startupConfiguration);
     }
 
-    @Provides
-    @Singleton
-    public static App getInstance(){
-//        if (sApp == null)
-//        {
-//            synchronized (App.class)
-//            {
-//                if (sApp == null)
-//                {
-//                    sApp = new App();
-//                }
-//            }
-//        }
-//        return sApp;
-        return new App();
-    }
-
-    @Provides
-    @Singleton
-    public CameraProvider getCameraProvider(){
+//    @Provides
+//    @Singleton
+//    public static App getInstance(){
+////        if (sApp == null)
+////        {
+////            synchronized (App.class)
+////            {
+////                if (sApp == null)
+////                {
+////                    sApp = new App();
+////                }
+////            }
+////        }
+////        return sApp;
+//        return new App();
+//    }
+//
+//    @Provides
+//    @Singleton
+//    public CameraProvider getCameraProvider(){
 //        if (sCameraProvider == null)
 //        {
 //            synchronized (CameraProvider.class)
@@ -66,7 +66,7 @@ public class App extends Application{
 //            }
 //        }
 //        return sCameraProvider;
-        return new CameraProvider();
-    }
+////        return new CameraProvider();
+//    }
 
 }

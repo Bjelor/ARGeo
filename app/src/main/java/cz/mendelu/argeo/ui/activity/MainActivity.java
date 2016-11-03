@@ -16,6 +16,8 @@ import butterknife.ButterKnife;
 import butterknife.Unbinder;
 import cz.mendelu.argeo.App;
 import cz.mendelu.argeo.R;
+import cz.mendelu.argeo.ui.view.ArDisplayView;
+import cz.mendelu.argeo.ui.view.OverlayView;
 import cz.mendelu.argeo.util.ARLog;
 
 public class MainActivity extends AppCompatActivity {
@@ -32,8 +34,8 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.ar_view_pane)
     FrameLayout mArViewPane;
 
-    @BindView(R.id.arview)
-    ArchitectView mArView;
+//    @BindView(R.id.arview)
+//    ArchitectView mArView;
 
     Unbinder mUnbinder;
 
@@ -104,14 +106,14 @@ public class MainActivity extends AppCompatActivity {
     // ------------------------------------------------------------------------
     private void initArViews(){
 
-        final StartupConfiguration config = new StartupConfiguration(App.WIKITUDE_KEY);
-        mArView.onCreate(config);
+//        final StartupConfiguration config = new StartupConfiguration(App.WIKITUDE_KEY);
+//        mArView.onCreate(config);
 
-//        ArDisplayView arDisplay = new ArDisplayView(this);
-//        mArViewPane.addView(arDisplay);
-//
-//        OverlayView arContent = new OverlayView(getApplicationContext());
-//        mArViewPane.addView(arContent);
+        ArDisplayView arDisplay = new ArDisplayView(this);
+        mArViewPane.addView(arDisplay);
+
+        OverlayView arContent = new OverlayView(getApplicationContext());
+        mArViewPane.addView(arContent);
     }
 
     private boolean arePermissionsGranted() {

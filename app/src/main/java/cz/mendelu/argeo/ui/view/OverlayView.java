@@ -15,6 +15,8 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.View;
 
+import java.util.Arrays;
+
 import cz.mendelu.argeo.util.ARLog;
 
 /**
@@ -43,7 +45,7 @@ public class OverlayView extends View {
         vut.setAltitude(450.5d);
     }
 
-    final float BETA = 0.2f;
+    final float BETA = 0.1f;
     final Paint contentPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     final Paint targetPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
@@ -57,6 +59,11 @@ public class OverlayView extends View {
 
     Location lastLocation = null;
     LocationManager locationManager;
+
+//    float[] rotation = new float[9];
+//    float[] identity = new float[9];
+//    float[] cameraRotation = new float[9];
+//    float[] orientation = new float[9];
 
     float[] lastAccelerometer;
     float[] lastCompass;
@@ -108,6 +115,11 @@ public class OverlayView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+
+//        Arrays.fill(rotation, 0.0f);
+//        Arrays.fill(cameraRotation, 0.0f);
+//        Arrays.fill(orientation, 0.0f);
+//        Arrays.fill(identity, 0.0f);
 
 
         canvas.drawText(accelData, canvas.getWidth() / 2, canvas.getHeight() / 4, contentPaint);
