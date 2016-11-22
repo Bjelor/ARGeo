@@ -11,6 +11,13 @@ android {
         targetSdkVersion 24
         versionCode 1
         versionName "1.0"
+        // Enabling multidex support.
+        multiDexEnabled true
+    }
+    packagingOptions{
+        exclude 'META-INF/LGPL2.1'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/NOTICE'
     }
     buildTypes {
         release {
@@ -33,6 +40,9 @@ dependencies {
 
     //Wikitude
     compile (name: 'wikitudesdk', ext:'aar')
+
+    //ArcGIS
+    compile 'com.esri.arcgis.android:arcgis-android:10.2.8-1'
 
     //Retrofit
     compile "com.squareup.retrofit2:retrofit:$RETROFIT_VERSION"

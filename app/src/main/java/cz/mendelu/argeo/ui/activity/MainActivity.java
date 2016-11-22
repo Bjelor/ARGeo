@@ -8,6 +8,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.FrameLayout;
 
+import com.esri.android.map.MapView;
 import com.wikitude.architect.ArchitectView;
 import com.wikitude.architect.StartupConfiguration;
 
@@ -33,6 +34,9 @@ public class MainActivity extends AppCompatActivity {
     // ========================================================================
     @BindView(R.id.ar_view_pane)
     FrameLayout mArViewPane;
+
+    @BindView(R.id.ar_map)
+    MapView mMapView;
 
 //    @BindView(R.id.arview)
 //    ArchitectView mArView;
