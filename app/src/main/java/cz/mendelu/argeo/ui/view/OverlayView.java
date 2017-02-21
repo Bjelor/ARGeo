@@ -15,8 +15,11 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.view.View;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.util.Arrays;
 
+import cz.mendelu.argeo.eventbus.SensorMsgEvt;
 import cz.mendelu.argeo.util.ARLog;
 
 /**
@@ -162,7 +165,7 @@ public class OverlayView extends View {
 
             float curBearingToMW = lastLocation.bearingTo(vut);
             float horizontalFOV = ArDisplayView.getCamera().getHorizontalAngle();
-            ARLog.d("[%s]::[v: %s, h:%s]", TAG, verticalFOV, horizontalFOV);
+//            ARLog.d("[%s]::[v: %s, h:%s]", TAG, verticalFOV, horizontalFOV);
 
             // use roll for screen rotation
             canvas.rotate((float)(0.0f- Math.toDegrees(orientation[2])));
@@ -223,6 +226,8 @@ public class OverlayView extends View {
                     lastCompass = lowPass(sensorEvent.values.clone(), lastCompass);
                     break;
             }
+
+            EventBus.getDefault().post(SensorMsgEvt.generate(sensorEvent.sensor.getType(), sensorEvent.values));
 
             OverlayView.this.invalidate();
         }

@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:mapbox="http://schemas.android.com/apk/res-auto">
 
+<!--    <com.mapbox.mapboxsdk.maps.MapView
+        android:id="@+id/mapview"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        mapbox:style_url="@string/style_mapbox_streets"/>-->
+
+<!--
     <com.esri.android.map.MapView
         android:id="@+id/ar_map"
         android:layout_width="match_parent"
@@ -11,13 +18,16 @@
         mapoptions.MapType="Topo"
         mapoptions.center="34.056215, -117.195668"
         mapoptions.ZoomLevel="16"/>
+-->
 
     <FrameLayout
         android:id="@+id/ar_view_pane"
-        android:alpha="0.5"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
     </FrameLayout>
+
+
+
 
 
 
