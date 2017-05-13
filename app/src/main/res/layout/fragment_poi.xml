@@ -1,5 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent">
-
-</FrameLayout>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:weightSum="4"
+    android:background="@drawable/bg_round_opaque"
+    android:padding="@dimen/main_overlay_margin"
+    android:layout_gravity="center"
+    android:id="@+id/poi_container">
+    <ImageView
+        android:id="@+id/poi_image"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:src="@android:mipmap/sym_def_app_icon"
+        android:layout_weight="1"/>
+    <RelativeLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="3">
+        <TextView
+            style="@style/OverlayTextTitle"
+            android:id="@+id/poi_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:maxWidth="50sp"
+            android:maxLines="1" />
+        <TextView
+            style="@style/OverlayText"
+            android:textColor="@android:color/darker_gray"
+            android:id="@+id/poi_description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxWidth="50sp"
+            android:maxLines="5"
+            android:layout_below="@+id/poi_title"/>
+    </RelativeLayout>
+</LinearLayout>

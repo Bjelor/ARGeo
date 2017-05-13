@@ -2,6 +2,8 @@ package cz.mendelu.argeo;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -18,8 +20,6 @@ import android.view.SurfaceHolder;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Singleton;
-
 import cz.mendelu.argeo.util.ARLog;
 
 /**
@@ -28,7 +28,6 @@ import cz.mendelu.argeo.util.ARLog;
  * @since 20. 7. 2016
  */
 
-@Singleton
 @TargetApi(21)
 public class Camera2 implements CameraWrapper {
 
@@ -55,6 +54,7 @@ public class Camera2 implements CameraWrapper {
     private boolean isCaptureSessionRunning = false;
 
     private SurfaceHolder mHolder = null;
+    private SurfaceTexture mTexture = null;
     private int mWidth = -1;
     private int mHeight = -1;
 
@@ -133,6 +133,18 @@ public class Camera2 implements CameraWrapper {
     }
 
     @Override
+    public void setPreviewTexture(SurfaceTexture holder) {
+        ARLog.d("[%s]::[setPreviewDisplay()]", TAG);
+
+        mTexture = holder;
+
+        //TODO: find out what happens if this is true
+        if(isCaptureSessionRunning){
+            startPreview();
+        }
+    }
+
+    @Override
     public void setPreviewDisplaySize(int width, int height) {
         ARLog.d("[%s]::[setPreviewDisplaySize()]", TAG);
 
@@ -163,7 +175,12 @@ public class Camera2 implements CameraWrapper {
             shouldStartPreview = false;
 
             List<Surface> surfaceList = new ArrayList<>();
-            surfaceList.add(mHolder.getSurface());
+
+            if(mHolder != null)
+                surfaceList.add(mHolder.getSurface());
+
+            if(mTexture != null)
+                surfaceList.add(new Surface(mTexture));
 
             try {
                 mCameraDevice.createCaptureSession(surfaceList, mCameraCaptureSessionStateCallback, null);
@@ -236,7 +253,11 @@ public class Camera2 implements CameraWrapper {
             shouldStartCaptureSession = false;
             try {
                 CaptureRequest.Builder builder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-                builder.addTarget(mHolder.getSurface());
+                if(mHolder != null)
+                    builder.addTarget(mHolder.getSurface());
+                if(mTexture != null)
+                    builder.addTarget(new Surface(mTexture));
+
                 CaptureRequest request = builder.build();
                 mCameraCaptureSession.setRepeatingRequest(request, mCaptureCallback, null);
             } catch (CameraAccessException e) {
@@ -337,4 +358,37 @@ public class Camera2 implements CameraWrapper {
             isCaptureSessionRunning = false;
         }
     };
+
+    @Override
+    public Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
+        final double ASPECT_TOLERANCE = 0.1;
+        double targetRatio=(double)h / w;
+
+        if (sizes == null) return null;
+
+        Camera.Size optimalSize = null;
+        double minDiff = Double.MAX_VALUE;
+
+        int targetHeight = h;
+
+        for (Camera.Size size : sizes) {
+            double ratio = (double) size.width / size.height;
+            if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
+            if (Math.abs(size.height - targetHeight) < minDiff) {
+                optimalSize = size;
+                minDiff = Math.abs(size.height - targetHeight);
+            }
+        }
+
+        if (optimalSize == null) {
+            minDiff = Double.MAX_VALUE;
+            for (Camera.Size size : sizes) {
+                if (Math.abs(size.height - targetHeight) < minDiff) {
+                    optimalSize = size;
+                    minDiff = Math.abs(size.height - targetHeight);
+                }
+            }
+        }
+        return optimalSize;
+    }
 }

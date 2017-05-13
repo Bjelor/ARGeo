@@ -1,38 +1,41 @@
 package cz.mendelu.argeo.ui.activity;
 
 import android.Manifest;
-import android.content.Context;
+import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
+import android.location.Location;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.view.WindowManager;
+import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-import butterknife.Unbinder;
+import cz.mendelu.argeo.App;
 import cz.mendelu.argeo.R;
 import cz.mendelu.argeo.SensorLog;
+import cz.mendelu.argeo.eventbus.LocationMsgEvt;
+import cz.mendelu.argeo.eventbus.OrientationMsgEvt;
 import cz.mendelu.argeo.eventbus.SensorMsgEvt;
+import cz.mendelu.argeo.ui.ScalpelFrameLayout;
 import cz.mendelu.argeo.ui.view.ArDisplayView;
 import cz.mendelu.argeo.ui.view.OverlayView;
 import cz.mendelu.argeo.util.ARLog;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity{
 
     // ========================================================================
     // =====================   C  O  N  S  T  A  N  T  S   ====================
@@ -44,23 +47,24 @@ public class MainActivity extends AppCompatActivity {
     // ========================================================================
     // ========================   M  E  M  B  E  R  S   =======================
     // ========================================================================
-    @BindView(R.id.ar_view_pane)
+
+
     FrameLayout mArViewPane;
+    OverlayView mOverlayView;
 
-    private static int it = 0;
+    ArDisplayView mArDisplay;
 
-    private static final Object mLock = new Object();
+    RelativeLayout mLoadingContainer;
 
-//    @BindView(R.id.ar_map)
-//    MapView mMapView;
+    LinearLayout mPositionContainer;
 
-//    @BindView(R.id.mapview)
-//    com.mapbox.mapboxsdk.maps.MapView mMapBoxView;
+    TextView mTextLat;
+    TextView mTextLon;
+    TextView mTextBea;
 
-//    @BindView(R.id.arview)
-//    ArchitectView mArView;
+    private boolean mShouldStartLogging = false;
 
-    Unbinder mUnbinder;
+    private List<ScalpelFrameLayout> mPOIList = new ArrayList<>();
 
     // ========================================================================
     // =======================    H  A  N  D  L  E  R   =======================
@@ -77,7 +81,15 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        mUnbinder = ButterKnife.bind(this);
+        mTextBea = (TextView) findViewById(R.id.bearing);
+        mTextLat = (TextView) findViewById(R.id.latitude);
+        mTextLon = (TextView) findViewById(R.id.longitude);
+
+        mLoadingContainer = (RelativeLayout) findViewById(R.id.loading_container);
+
+        mPositionContainer = (LinearLayout) findViewById(R.id.location_container);
+
+        setLocationViews(App.getLastLocation());
 
         if (arePermissionsGranted()){
             initArViews();
@@ -92,12 +104,23 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
+//        mMapBoxView.onSaveInstanceState(outState);
     }
 
     @Override
     public void onStart() {
         super.onStart();
         EventBus.getDefault().register(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
     }
 
     @Override
@@ -109,7 +132,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mUnbinder.unbind();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
     }
 
     // ------------------------------------------------------------------------
@@ -120,13 +147,65 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressWarnings("unused")
     @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(final OrientationMsgEvt event) {
+        if(!mPOIList.isEmpty()){
+            for (ScalpelFrameLayout sfl : mPOIList) {
+                sfl.setLastOrientation(event.getValues());
+            }
+        }
+
+        if(mOverlayView != null){
+            mOverlayView.setLastOrientation(event.getValues());
+        }
+
+        if(mTextBea != null){
+            mTextBea.setText(String.format(Locale.getDefault(),"azimuth: %.2f",event.getValues()[0]));
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(final SensorMsgEvt event) {
-        SensorLog.getInstance().performLog(event.getType(), event.getValues(), this);
+        if (event.getType() == Sensor.TYPE_GYROSCOPE) {
+            if (mShouldStartLogging) {
+                SensorLog.getInstance().performLog(event.getType(), event.getValues(), this);
+            }
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(final LocationMsgEvt event) {
+        setLocationViews(event.getLocation());
+        if(!mPOIList.isEmpty()){
+            for (ScalpelFrameLayout sfl : mPOIList) {
+                sfl.calculateDistance();
+            }
+        }
+    }
+
+    private void setLocationViews(Location location){
+        if(location == null) {
+            if (mLoadingContainer != null) {
+                mLoadingContainer.setVisibility(View.VISIBLE);
+            }
+            if (mPositionContainer != null) {
+                mPositionContainer.setVisibility(View.GONE);
+            }
+        } else {
+            if (mLoadingContainer != null) {
+                mLoadingContainer.setVisibility(View.GONE);
+            }
+            if (mTextLat != null && mTextLon != null && mTextBea != null) {
+                mPositionContainer.setVisibility(View.VISIBLE);
+                mTextLat.setText(String.format(Locale.getDefault(),"lat: %.4f",location.getLatitude()));
+                mTextLon.setText(String.format(Locale.getDefault(),"lon: %.4f",location.getLongitude()));
+            }
+        }
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         switch (requestCode) {
             case REQUEST_CAMERA: {
                 // If request is cancelled, the result arrays are empty.
@@ -159,20 +238,25 @@ public class MainActivity extends AppCompatActivity {
     // ------------------------------------------------------------------------
     private void initArViews(){
 
-//        mMapView.setVisibility(View.GONE);
+        mArViewPane = (FrameLayout) findViewById(R.id.ar_view_pane);
+        mArDisplay = new ArDisplayView(MainActivity.this);
+        mArViewPane.addView(mArDisplay);
+        mOverlayView = new OverlayView(getApplicationContext());
+        mArViewPane.addView(mOverlayView);
 
-//        MapboxAccountManager.start(this, "pk.eyJ1IjoiYmplbG9yIiwiYSI6ImNpeGF4c215YjAwNGYyb280eGd5eWdnZ28ifQ.sNXmvUxVX9-0U6NQ5eCRkg");
+        ScalpelFrameLayout sfl = new ScalpelFrameLayout(this,
+                App.front, "Front", "-");
+        sfl.calculateDistance();
+        mPOIList.add(sfl);
 
-//        final StartupConfiguration config = new StartupConfiguration(App.WIKITUDE_KEY);
-//        mArView.onCreate(config);
+        ScalpelFrameLayout sfl2 = new ScalpelFrameLayout(this,
+                App.vut, "Left", "-");
+        sfl2.calculateDistance();
+        mPOIList.add(sfl2);
 
-        ArDisplayView arDisplay = new ArDisplayView(this);
-        mArViewPane.addView(arDisplay);
-
-        OverlayView arContent = new OverlayView(getApplicationContext());
-        mArViewPane.addView(arContent);
+        mArViewPane.addView(sfl);
+        mArViewPane.addView(sfl2);
     }
-
     private boolean arePermissionsGranted() {
 
         boolean camera;
@@ -208,4 +292,24 @@ public class MainActivity extends AppCompatActivity {
                     REQUEST_WRITE_EXTERNAL_STORAGE);
         }
     }
+
+    @Override
+    public void onBackPressed() {
+//        super.onBackPressed();
+    }
+
+    public static void call(Activity activity)
+    {
+        // Creating an intent with the current activity and the activity we wish to start
+        Intent myIntent = new Intent(activity, MainActivity.class);
+        activity.startActivity(myIntent);
+    }
+
+    public static String Testcall()
+    {
+        return "android string returned";
+    }
+
+
+
 }

@@ -1,39 +1,110 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.DrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:mapbox="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    xmlns:mapbox="http://schemas.android.com/apk/res-auto">
+    android:layout_height="match_parent">
 
-<!--    <com.mapbox.mapboxsdk.maps.MapView
-        android:id="@+id/mapview"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        mapbox:style_url="@string/style_mapbox_streets"/>-->
 
-<!--
-    <com.esri.android.map.MapView
-        android:id="@+id/ar_map"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        mapoptions.MapType="Topo"
-        mapoptions.center="34.056215, -117.195668"
-        mapoptions.ZoomLevel="16"/>
--->
-
-    <FrameLayout
-        android:id="@+id/ar_view_pane"
+    <RelativeLayout
+        android:id="@+id/main_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-    </FrameLayout>
+        <FrameLayout
+            android:id="@+id/ar_view_pane"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <TextView
+            android:id="@+id/calibrate_btn"
+            style="@style/OverlayTextButton"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:text="@string/calibrate"
+            android:background="@drawable/bg_round_opaque"
+            android:layout_margin="@dimen/main_overlay_margin"/>
 
 
+        <LinearLayout
+            android:id="@+id/location_container"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@drawable/bg_round_opaque"
+            android:layout_margin="@dimen/main_overlay_margin"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:weightSum="4">
+            <ImageView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_my_location_dark_gray_24dp"
+                />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
 
+                android:orientation="vertical"
+                android:layout_weight="3">
+                <TextView
+                    android:id="@+id/bearing"
+                    style="@style/OverlayTextTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:text="@string/location_title"
+                    android:layout_margin="@dimen/main_overlay_margin"
+                    android:layout_weight="1" />
 
+                <TextView
+                    android:id="@+id/longitude"
+                    style="@style/OverlayText"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:text="@string/lon_placeholder"
+                    android:layout_margin="@dimen/main_overlay_margin"
+                    android:layout_weight="1" />
+                <TextView
+                    android:id="@+id/latitude"
+                    style="@style/OverlayText"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:text="@string/lat_placeholder"
+                    android:layout_margin="@dimen/main_overlay_margin"
+                    android:layout_weight="1"
+                    />
+            </LinearLayout>
+        </LinearLayout>
 
+        <RelativeLayout
+            android:id="@+id/loading_container"
+            android:layout_centerInParent="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:padding="@dimen/padding_conatiner"
+            android:background="@drawable/bg_round_opaque"
+            android:gravity="center">
+            <ProgressBar
+                android:id="@+id/progress"
+                android:layout_centerHorizontal="true"
+                android:layout_width="wrap_content"
+                android:layout_marginTop="@dimen/margin_text_top"
+                android:layout_height="wrap_content"/>
+            <TextView
+                style="@style/OverlayText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/progress"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="@dimen/margin_text_top"
+                android:text="@string/loading"/>
+        </RelativeLayout>
 
-    <!--<com.wikitude.architect.ArchitectView-->
-        <!--android:id="@+id/arview"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_height="match_parent"/>-->
-
-</RelativeLayout>
+    </RelativeLayout>
+</android.support.v4.widget.DrawerLayout>

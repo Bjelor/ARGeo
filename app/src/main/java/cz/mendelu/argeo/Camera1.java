@@ -1,11 +1,11 @@
 package cz.mendelu.argeo;
 
+import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.view.SurfaceHolder;
 
 import java.io.IOException;
 import java.util.List;
-
-import javax.inject.Singleton;
 
 import cz.mendelu.argeo.util.ARLog;
 
@@ -14,7 +14,6 @@ import cz.mendelu.argeo.util.ARLog;
  * @author adamb_000
  * @since 20. 7. 2016
  */
-@Singleton
 public class Camera1 implements CameraWrapper {
 
     // ========================================================================
@@ -78,6 +77,16 @@ public class Camera1 implements CameraWrapper {
     }
 
     @Override
+    public void setPreviewTexture(SurfaceTexture holder) {
+        ARLog.d("[%s]::[setPreviewDisplay()]", TAG);
+        try {
+            mCamera.setPreviewTexture(holder);
+        } catch (IOException e) {
+            ARLog.e("[%s]::[setPreviewDisplay IOException: %s]", TAG, e.getMessage());
+        }
+    }
+
+    @Override
     public void setPreviewDisplaySize(int width, int height) {
 
         ARLog.d("[%s]::[setPreviewDisplay()]", TAG);
@@ -110,5 +119,38 @@ public class Camera1 implements CameraWrapper {
     @Override
     public float getHorizontalAngle() {
         return mCamera.getParameters().getHorizontalViewAngle();
+    }
+
+    @Override
+    public Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
+        final double ASPECT_TOLERANCE = 0.1;
+        double targetRatio=(double)h / w;
+
+        if (sizes == null) return null;
+
+        Camera.Size optimalSize = null;
+        double minDiff = Double.MAX_VALUE;
+
+        int targetHeight = h;
+
+        for (Camera.Size size : sizes) {
+            double ratio = (double) size.width / size.height;
+            if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
+            if (Math.abs(size.height - targetHeight) < minDiff) {
+                optimalSize = size;
+                minDiff = Math.abs(size.height - targetHeight);
+            }
+        }
+
+        if (optimalSize == null) {
+            minDiff = Double.MAX_VALUE;
+            for (Camera.Size size : sizes) {
+                if (Math.abs(size.height - targetHeight) < minDiff) {
+                    optimalSize = size;
+                    minDiff = Math.abs(size.height - targetHeight);
+                }
+            }
+        }
+        return optimalSize;
     }
 }

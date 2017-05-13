@@ -9,6 +9,7 @@ import android.view.WindowManager;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -28,7 +29,7 @@ public class SensorLog {
 
     private static final String LOG_EXTENSION = ".csv";
 
-    private static final String FLOAT_FORMAT_MASK = "%.8f";
+    private static final String FLOAT_FORMAT_MASK = "%,8f";
     private static final int TOTAL_ITERATIONS = 100;
 
     private File accFile;
@@ -126,12 +127,13 @@ public class SensorLog {
     }
 
     private String makeDataHeader(){
-        return "x;y;z\n";
+        return "timestamp;x;y;z\n";
     }
 
     private String makeDataLine(float[] values){
         if(values.length == 3)
-            return String.format(Locale.getDefault(),FLOAT_FORMAT_MASK,values[0])
+            return Calendar.getInstance().getTime().toString()
+                    + String.format(Locale.getDefault(),FLOAT_FORMAT_MASK,values[0])
                     + ";" + String.format(Locale.getDefault(),FLOAT_FORMAT_MASK,values[1])
                     + ";" + String.format(Locale.getDefault(),FLOAT_FORMAT_MASK,values[2]) + "\n";
         return "";

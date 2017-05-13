@@ -1,5 +1,7 @@
 package cz.mendelu.argeo.eventbus;
 
+import java.util.Locale;
+
 /**
  * Created by Bjelis on 13.2.2017.
  */
@@ -24,5 +26,14 @@ public class SensorMsgEvt {
 
     public int getType() {
         return type;
+    }
+
+    @Override
+    public String toString() {
+        String string = String.valueOf(getType());
+        for(int i = 0; i<values.length; i++){
+            string = string + " " + String.format(Locale.getDefault(),"%.2f",values[i]);
+        }
+        return string;
     }
 }

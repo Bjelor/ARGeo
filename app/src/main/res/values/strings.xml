@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">argeo</string>
+    <string name="style_mapbox_semi_transparent">mapbox://styles/bjelor/cizfw9gvf00f22so1i240am5i</string>
+    <string name="calibrate">Calibrate sensors</string>
+    <string name="loading">retrieving your location…</string>
+    <string name="lon_placeholder">--</string>
+    <string name="lat_placeholder">--</string>
+    <string name="location_title">GPS:</string>
 </resources>

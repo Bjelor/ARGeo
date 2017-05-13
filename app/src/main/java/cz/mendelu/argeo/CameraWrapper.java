@@ -1,6 +1,10 @@
 package cz.mendelu.argeo;
 
+import android.graphics.SurfaceTexture;
+import android.hardware.Camera;
 import android.view.SurfaceHolder;
+
+import java.util.List;
 
 /**
  * An interface to wrap both {@link android.hardware.Camera} and {@link android.hardware.camera2}
@@ -32,6 +36,11 @@ public interface CameraWrapper {
     void setPreviewDisplay(SurfaceHolder holder);
 
     /**
+     * for {@link android.view.TextureView}
+     */
+    void setPreviewTexture(SurfaceTexture holder);
+
+    /**
      * equivalent to {@link android.hardware.Camera.Parameters#setPreviewSize(int, int)}
      * and consecutively applying params via {@link android.hardware.Camera#setParameters(android.hardware.Camera.Parameters)}
      */
@@ -52,4 +61,6 @@ public interface CameraWrapper {
      */
     float getHorizontalAngle();
 
+
+    Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h);
 }
