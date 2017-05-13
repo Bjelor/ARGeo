@@ -1,38 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content" android:layout_height="wrap_content"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="200dp" android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:weightSum="4"
     android:background="@drawable/bg_round_opaque"
     android:padding="@dimen/main_overlay_margin"
     android:layout_gravity="center"
     android:id="@+id/poi_container">
     <ImageView
         android:id="@+id/poi_image"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:src="@android:mipmap/sym_def_app_icon"
-        android:layout_weight="1"/>
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_place_dark_gray_24dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"/>
     <RelativeLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="3">
+        android:layout_toRightOf="@+id/poi_image"
+        android:layout_alignParentTop="true"
+        android:layout_width="160dp"
+        android:layout_height="40dp">
         <TextView
             style="@style/OverlayTextTitle"
             android:id="@+id/poi_title"
-            android:layout_width="wrap_content"
+            android:layout_width="160dp"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
             android:maxWidth="50sp"
-            android:maxLines="1" />
+            android:maxLines="2"
+            android:ellipsize="end"/>
         <TextView
-            style="@style/OverlayText"
-            android:textColor="@android:color/darker_gray"
-            android:id="@+id/poi_description"
-            android:layout_width="wrap_content"
+            style="@style/OverlayTextDistance"
+            android:id="@+id/poi_distance"
+            android:layout_width="160dp"
             android:layout_height="wrap_content"
             android:maxWidth="50sp"
-            android:maxLines="5"
-            android:layout_below="@+id/poi_title"/>
+            android:layout_below="@+id/poi_title"
+            android:maxLines="1" />
+
     </RelativeLayout>
-</LinearLayout>
+    <TextView
+        style="@style/OverlayText"
+        android:textColor="@android:color/darker_gray"
+        android:id="@+id/poi_description"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:maxWidth="50sp"
+        android:maxLines="5"
+        android:ellipsize="end"
+        android:layout_below="@+id/poi_image"/>
+</RelativeLayout>

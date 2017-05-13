@@ -1,4 +1,4 @@
-package cz.mendelu.argeo.ui;
+package cz.mendelu.argeo.ui.view;
 
 import android.app.Activity;
 import android.content.Context;
@@ -10,16 +10,13 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.Typeface;
 import android.location.Location;
-import android.os.Build;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
@@ -29,15 +26,11 @@ import java.util.Deque;
 import java.util.Locale;
 
 import cz.mendelu.argeo.App;
-import cz.mendelu.argeo.OrientationHelper;
-import cz.mendelu.argeo.ui.view.ArDisplayView;
-import cz.mendelu.argeo.ui.view.POIFragment;
+import cz.mendelu.argeo.Placemark;
+import cz.mendelu.argeo.ui.fragment.POIFragment;
 import cz.mendelu.argeo.util.ARLog;
 
 import static android.graphics.Paint.ANTI_ALIAS_FLAG;
-import static android.graphics.Paint.Style.STROKE;
-import static android.graphics.Typeface.NORMAL;
-import static android.os.Build.VERSION_CODES.JELLY_BEAN;
 import static android.view.MotionEvent.ACTION_DOWN;
 import static android.view.MotionEvent.ACTION_POINTER_UP;
 import static android.view.MotionEvent.INVALID_POINTER_ID;
@@ -52,9 +45,9 @@ import static android.view.MotionEvent.INVALID_POINTER_ID;
  * <li>Two finger horizontal pinch: Adjust layer spacing.</li>
  * </ul>
  */
-public class ScalpelFrameLayout extends FrameLayout implements View.OnClickListener {
+public class FloatingFrameLayout extends FrameLayout{
 
-    private static final String TAG = ScalpelFrameLayout.class.getSimpleName();
+    private static final String TAG = FloatingFrameLayout.class.getSimpleName();
 
     private static final int TRACKING_UNKNOWN = 0;
     private static final int TRACKING_VERTICALLY = 1;
@@ -78,12 +71,6 @@ public class ScalpelFrameLayout extends FrameLayout implements View.OnClickListe
 
     private static void log(String message, Object... args) {
         Log.d("Scalpel", String.format(message, args));
-    }
-
-    @Override
-    public void onClick(View v) {
-        this.shouldZoom = !this.shouldZoom;
-        ARLog.d("[%s]::[onClick]", TAG);
     }
 
     private static class LayeredView {
@@ -117,14 +104,9 @@ public class ScalpelFrameLayout extends FrameLayout implements View.OnClickListe
     };
 
     private final Resources res;
-    private final float density;
-    private final float slop;
-    private final float textOffset;
-    private final float textSize;
 
     private boolean enabled = true;
     private boolean drawViews = true;
-    private boolean drawIds;
 
     private int pointerOne = INVALID_POINTER_ID;
     private float lastOneX;
@@ -134,37 +116,31 @@ public class ScalpelFrameLayout extends FrameLayout implements View.OnClickListe
     private float lastTwoY;
     private int multiTouchTracking = TRACKING_UNKNOWN;
 
-    private float rotationY = ROTATION_DEFAULT_Y;
-    private float rotationX = ROTATION_DEFAULT_X;
-    private float zoom = ZOOM_DEFAULT;
-    private float spacing = SPACING_DEFAULT;
-
-    private int chromeColor;
-    private int chromeShadowColor;
-
     private Location target = null;
+
+    private Context context;
 
     private boolean shouldZoom = false;
 
-    float[] lastAccelerometer;
-    float[] lastCompass;
-    float[] lastGyro;
     float[] lastOrientation;
 
-    private POIFragment mFragment;
+    private POIFragment poiFragment;
 
-    public ScalpelFrameLayout(Context context, Location location, String title, String description) {
-        this(context);
+    public FloatingFrameLayout(Context context) {
+        this(context, null);
+    }
 
-        setTargetLocation(location);
-        mFragment = POIFragment.newInstance(null, title, description);
-        mFragment.setOnClickListener(this);
+    public FloatingFrameLayout(Context context, AttributeSet attrs) {
+        this(context, attrs, 0);
+    }
 
-        int id = generateViewId();
-        setId(id);
+    public FloatingFrameLayout(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+        this.res = context.getResources();
 
-        if (context instanceof Activity)
-            ((Activity) context).getFragmentManager().beginTransaction().add(id, mFragment).commit();
+        this.context = context;
+
+
 
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
         lp.gravity = Gravity.CENTER;
@@ -173,118 +149,34 @@ public class ScalpelFrameLayout extends FrameLayout implements View.OnClickListe
         setBackgroundResource(android.R.color.transparent);
     }
 
-    public ScalpelFrameLayout(Context context) {
-        this(context, null);
-    }
 
-    public ScalpelFrameLayout(Context context, AttributeSet attrs) {
-        this(context, attrs, 0);
-    }
+    public void loadPlacemark(Placemark placemark){
 
-    public ScalpelFrameLayout(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
-        res = context.getResources();
-        density = context.getResources().getDisplayMetrics().density;
-        slop = ViewConfiguration.get(context).getScaledTouchSlop();
+        if(placemark == null)
+            return;
 
-        textSize = TEXT_SIZE_DP * density;
-        textOffset = TEXT_OFFSET_DP * density;
+        this.target = placemark.generateLocation();
 
-        setChromeColor(CHROME_COLOR);
-        viewBorderPaint.setStyle(STROKE);
-        viewBorderPaint.setTextSize(textSize);
-        setChromeShadowColor(CHROME_SHADOW_COLOR);
-        if (Build.VERSION.SDK_INT >= JELLY_BEAN) {
-            viewBorderPaint.setTypeface(Typeface.create("sans-serif-condensed", NORMAL));
+        String title = placemark.getTitle();
+        String description = placemark.getDescription();
+        String imageUrl = placemark.getIconUrl();
+
+        if(poiFragment == null) {
+            this.poiFragment = POIFragment.newInstance(title, description,imageUrl);
+        } else {
+            this.poiFragment.setTitle(title);
+            this.poiFragment.setDescription(description);
         }
-    }
 
-    /**
-     * Set the view border chrome color.
-     */
-    public void setChromeColor(int color) {
-        if (chromeColor != color) {
-            viewBorderPaint.setColor(color);
-            chromeColor = color;
-            invalidate();
+        int id = getId();
+
+        if(id == NO_ID){
+            id = generateViewId();
+            setId(id);
         }
-    }
 
-    /**
-     * Get the view border chrome color.
-     */
-    public int getChromeColor() {
-        return chromeColor;
-    }
-
-    /**
-     * Set the view border chrome shadow color.
-     */
-    public void setChromeShadowColor(int color) {
-        if (chromeShadowColor != color) {
-            viewBorderPaint.setShadowLayer(1, -1, 1, color);
-            chromeShadowColor = color;
-            invalidate();
-        }
-    }
-
-    /**
-     * Get the view border chrome shadow color.
-     */
-    public int getChromeShadowColor() {
-        return chromeShadowColor;
-    }
-
-    /**
-     * Set whether or not the 3D view layer interaction is enabled.
-     */
-    public void setLayerInteractionEnabled(boolean enabled) {
-        if (this.enabled != enabled) {
-            this.enabled = enabled;
-            setWillNotDraw(!enabled);
-            invalidate();
-        }
-    }
-
-    /**
-     * Returns true when 3D view layer interaction is enabled.
-     */
-    public boolean isLayerInteractionEnabled() {
-        return enabled;
-    }
-
-    /**
-     * Set whether the view layers draw their contents. When false, only wireframes are shown.
-     */
-    public void setDrawViews(boolean drawViews) {
-        if (this.drawViews != drawViews) {
-            this.drawViews = drawViews;
-            invalidate();
-        }
-    }
-
-    /**
-     * Returns true when view layers draw their contents.
-     */
-    public boolean isDrawingViews() {
-        return drawViews;
-    }
-
-    /**
-     * Set whether the view layers draw their IDs.
-     */
-    public void setDrawIds(boolean drawIds) {
-        if (this.drawIds != drawIds) {
-            this.drawIds = drawIds;
-            invalidate();
-        }
-    }
-
-    /**
-     * Returns true when view layers draw their IDs.
-     */
-    public boolean isDrawingIds() {
-        return drawIds;
+        if (context instanceof Activity && !poiFragment.isAdded())
+            ((Activity) context).getFragmentManager().beginTransaction().add(id, poiFragment).commit();
     }
 
     @Override
@@ -321,91 +213,6 @@ public class ScalpelFrameLayout extends FrameLayout implements View.OnClickListe
                 }
                 break;
             }
-
-            case MotionEvent.ACTION_MOVE: {
-                if (pointerTwo == INVALID_POINTER_ID) {
-                    // Single pointer controlling 3D rotation.
-                    for (int i = 0, count = event.getPointerCount(); i < count; i++) {
-                        if (pointerOne == event.getPointerId(i)) {
-                            float eventX = event.getX(i);
-                            float eventY = event.getY(i);
-                            float dx = eventX - lastOneX;
-                            float dy = eventY - lastOneY;
-                            float drx = 90 * (dx / getWidth());
-                            float dry = 90 * (-dy / getHeight()); // Invert Y-axis.
-                            // An 'x' delta affects 'y' rotation and vise versa.
-                            rotationY = Math.min(Math.max(rotationY + drx, ROTATION_MIN), ROTATION_MAX);
-                            rotationX = Math.min(Math.max(rotationX + dry, ROTATION_MIN), ROTATION_MAX);
-                            if (DEBUG) {
-                                log("Single pointer moved (%s, %s) affecting rotation (%s, %s).", dx, dy, drx, dry);
-                            }
-
-                            lastOneX = eventX;
-                            lastOneY = eventY;
-
-                            invalidate();
-                        }
-                    }
-                } else {
-                    // We know there's two pointers and we only care about pointerOne and pointerTwo
-                    int pointerOneIndex = event.findPointerIndex(pointerOne);
-                    int pointerTwoIndex = event.findPointerIndex(pointerTwo);
-
-                    float xOne = event.getX(pointerOneIndex);
-                    float yOne = event.getY(pointerOneIndex);
-                    float xTwo = event.getX(pointerTwoIndex);
-                    float yTwo = event.getY(pointerTwoIndex);
-
-                    float dxOne = xOne - lastOneX;
-                    float dyOne = yOne - lastOneY;
-                    float dxTwo = xTwo - lastTwoX;
-                    float dyTwo = yTwo - lastTwoY;
-
-                    if (multiTouchTracking == TRACKING_UNKNOWN) {
-                        float adx = Math.abs(dxOne) + Math.abs(dxTwo);
-                        float ady = Math.abs(dyOne) + Math.abs(dyTwo);
-
-                        if (adx > slop * 2 || ady > slop * 2) {
-                            if (adx > ady) {
-                                // Left/right movement wins. Track horizontal.
-                                multiTouchTracking = TRACKING_HORIZONTALLY;
-                            } else {
-                                // Up/down movement wins. Track vertical.
-                                multiTouchTracking = TRACKING_VERTICALLY;
-                            }
-                        }
-                    }
-
-                    if (multiTouchTracking == TRACKING_VERTICALLY) {
-                        if (yOne >= yTwo) {
-                            zoom += dyOne / getHeight() - dyTwo / getHeight();
-                        } else {
-                            zoom += dyTwo / getHeight() - dyOne / getHeight();
-                        }
-
-                        zoom = Math.min(Math.max(zoom, ZOOM_MIN), ZOOM_MAX);
-                        invalidate();
-                    } else if (multiTouchTracking == TRACKING_HORIZONTALLY) {
-                        if (xOne >= xTwo) {
-                            spacing += (dxOne / getWidth() * SPACING_MAX) - (dxTwo / getWidth() * SPACING_MAX);
-                        } else {
-                            spacing += (dxTwo / getWidth() * SPACING_MAX) - (dxOne / getWidth() * SPACING_MAX);
-                        }
-
-                        spacing = Math.min(Math.max(spacing, SPACING_MIN), SPACING_MAX);
-                        invalidate();
-                    }
-
-                    if (multiTouchTracking != TRACKING_UNKNOWN) {
-                        lastOneX = xOne;
-                        lastOneY = yOne;
-                        lastTwoX = xTwo;
-                        lastTwoY = yTwo;
-                    }
-                }
-                break;
-            }
-
             case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_POINTER_UP: {
@@ -432,16 +239,6 @@ public class ScalpelFrameLayout extends FrameLayout implements View.OnClickListe
         return true;
     }
 
-    public void setLastAccelerometer(float[] values) {
-        lastAccelerometer = values;
-        invalidate();
-    }
-
-    public void setLastCompass(float[] values) {
-        lastCompass = values;
-        invalidate();
-    }
-
     public void setLastOrientation(float[] values) {
         lastOrientation = values;
         invalidate();
@@ -459,17 +256,16 @@ public class ScalpelFrameLayout extends FrameLayout implements View.OnClickListe
     }
 
     public void setDescription(String description){
-        if(mFragment != null)
-            mFragment.setDescription(description);
+        if(poiFragment != null)
+            poiFragment.setDescription(description);
     }
 
     public void calculateDistance(){
         if(App.getLastLocation() == null || target == null)
             return;
 
-        String description = String.format(Locale.getDefault(),"%.0f", App.getLastLocation().distanceTo(target)) + " m";
-        if(mFragment != null)
-            mFragment.setDescription(description);
+        if(poiFragment != null)
+            poiFragment.setDistance(App.getLastLocation().distanceTo(target));
     }
 
     @Override
@@ -584,22 +380,12 @@ public class ScalpelFrameLayout extends FrameLayout implements View.OnClickListe
             view.getLocationInWindow(location);
             canvas.translate(location[0] - x, location[1] - y);
 
-//      viewBoundsRect.set(0, 0, view.getWidth(), view.getHeight());
-//      canvas.drawRect(viewBoundsRect, viewBorderPaint);
-
             if (shouldZoom)
                 canvas.scale(2.0f, 2.0f, x, y);
 
             if (drawViews) {
                 view.draw(canvas);
             }
-
-//      if (drawIds) {
-//        int id = view.getId();
-//        if (id != NO_ID) {
-//          canvas.drawText(nameForId(id), textOffset, textSize, viewBorderPaint);
-//        }
-//      }
 
             canvas.restoreToCount(viewSaveCount);
 

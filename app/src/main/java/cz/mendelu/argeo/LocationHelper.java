@@ -57,8 +57,6 @@ public class LocationHelper {
             }
         };
 
-
-
         try {
             locationManager.requestLocationUpdates(best, 50, 0, locationListener);
             //this segment causes generation of almost random initial position - not recommended to use

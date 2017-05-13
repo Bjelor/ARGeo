@@ -21,6 +21,15 @@ public class OrientationMsgEvt {
         return values;
     }
 
+    public float getCurrentBearing(){
+        float bearing = (float) (values[0] * 180 / Math.PI);
+        if (bearing < 0) {
+            bearing += 360;
+        }
+
+        return bearing;
+    }
+
     @Override
     public String toString() {
         String string = OrientationMsgEvt.class.getSimpleName();

@@ -311,9 +311,9 @@ Headings:<br>
 <h3>Header 5</h5>
 <hr>
 Images:<br>
-<i>Remote image</i><br>
+<i>Remote imageUrl</i><br>
 <img src="//developers.google.com/kml/documentation/images/googleSample.png"><br>
-<i>Scaled image</i><br>
+<i>Scaled imageUrl</i><br>
 <img src="//developers.google.com/kml/documentation/images/googleSample.png" width=100><br>
 <hr>
 Simple Tables:<br>
@@ -362,7 +362,7 @@ Simple Tables:<br>
         <name>Simple crosshairs</name>
         <visibility>0</visibility>
         <description>This screen overlay uses fractional positioning to put the
-          image in the exact center of the screen</description>
+          imageUrl in the exact center of the screen</description>
         <Icon>
           <href>http://developers.google.com/kml/documentation/images/crosshairs.png</href>
         </Icon>

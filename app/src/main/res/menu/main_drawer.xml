@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="none">
+        <item
+            android:id="@+id/menu_item_load_kml"
+            android:icon="@drawable/ic_menu_dark_gray_24dp"
+            android:title="@string/menu_item_load_kml"/>
+        <item
+            android:id="@+id/menu_item_view_distance"
+            android:icon="@drawable/ic_menu_dark_gray_24dp"
+            android:title="@string/menu_item_view_distance"/>
+        <item
+            android:id="@+id/menu_item_sensor_filter"
+            android:icon="@drawable/ic_menu_dark_gray_24dp"
+            android:title="@string/menu_item_sensor_filter"/>
+    </group>
+</menu>

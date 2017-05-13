@@ -32,11 +32,6 @@ public class OverlayView extends View {
     // ========================   M  E  M  B  E  R  S   =======================
     // ========================================================================
 
-    String accelData = "Accelerometer Data";
-    String compassData = "Compass Data";
-    String gyroData = "Gyro Data";
-    String orientationData = "Orientation Data";
-
     float[] lastOrientation;
 
     // ========================================================================
@@ -67,22 +62,14 @@ public class OverlayView extends View {
             return;
         }
 
-        if(App.getLastLocation() == null){
-            ARLog.e("[%s]::[lastLocation was null]",TAG);
-            return;
-        }
-
         float verticalFOV = ArDisplayView.getCamera().getVerticalAngle();
 
-        float curBearingToMW = App.getLastLocation().bearingTo(App.front);
         float horizontalFOV = ArDisplayView.getCamera().getHorizontalAngle();
-
-        orientationData = "orientation[" + lastOrientation[0] + "]" + "[" + lastOrientation[1] + "]" + "[" + lastOrientation[2] + "]";
 
         // use roll for screen rotation
         canvas.rotate((float)(0.0f- Math.toDegrees(lastOrientation[2])));
         // Translate, but normalize for the FOV of the camera -- basically, pixels per degree, times degrees == pixels
-        float dx = (float) ( (canvas.getWidth()/ horizontalFOV) * (Math.toDegrees(lastOrientation[0])-curBearingToMW));
+        float dx = (float) ( (canvas.getWidth()/ horizontalFOV) * Math.toDegrees(lastOrientation[0]));
         float dy = (float) ( (canvas.getHeight()/ verticalFOV) * Math.toDegrees(lastOrientation[1])) ;
 
         // wait to translate the dx so the horizon doesn't get pushed off
@@ -96,6 +83,10 @@ public class OverlayView extends View {
 
         // draw our point -- we've rotated and translated this to the right spot already
         canvas.drawCircle(canvas.getWidth()/2, canvas.getHeight()/2, 8.0f, contentPaint);
+
+
+        canvas.drawText("N", canvas.getWidth()/2, (canvas.getHeight()*15)/32, contentPaint);
+        canvas.scale(2.5f, 2.5f);
 
     }
 

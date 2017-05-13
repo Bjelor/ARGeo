@@ -6,13 +6,19 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Gravity;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
+import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -20,22 +26,27 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 import cz.mendelu.argeo.App;
+import cz.mendelu.argeo.KMLParser;
+import cz.mendelu.argeo.Placemark;
 import cz.mendelu.argeo.R;
 import cz.mendelu.argeo.SensorLog;
 import cz.mendelu.argeo.eventbus.LocationMsgEvt;
 import cz.mendelu.argeo.eventbus.OrientationMsgEvt;
 import cz.mendelu.argeo.eventbus.SensorMsgEvt;
-import cz.mendelu.argeo.ui.ScalpelFrameLayout;
+import cz.mendelu.argeo.ui.view.FloatingFrameLayout;
 import cz.mendelu.argeo.ui.view.ArDisplayView;
 import cz.mendelu.argeo.ui.view.OverlayView;
 import cz.mendelu.argeo.util.ARLog;
 
-public class MainActivity extends AppCompatActivity{
+public class MainActivity extends AppCompatActivity {
 
     // ========================================================================
     // =====================   C  O  N  S  T  A  N  T  S   ====================
@@ -44,9 +55,15 @@ public class MainActivity extends AppCompatActivity{
     public static final int REQUEST_CAMERA = 0;
     public static final int REQUEST_WRITE_EXTERNAL_STORAGE = 1;
 
+    private static final int REQUEST_KML_FILE = 2;
+
+
     // ========================================================================
     // ========================   M  E  M  B  E  R  S   =======================
     // ========================================================================
+
+    DrawerLayout mDrawerLayout;
+    NavigationView mNavigationDrawer;
 
 
     FrameLayout mArViewPane;
@@ -55,16 +72,17 @@ public class MainActivity extends AppCompatActivity{
     ArDisplayView mArDisplay;
 
     RelativeLayout mLoadingContainer;
-
-    LinearLayout mPositionContainer;
+    RelativeLayout mPositionContainer;
 
     TextView mTextLat;
     TextView mTextLon;
     TextView mTextBea;
 
+    ImageButton mMenuBtn;
+
     private boolean mShouldStartLogging = false;
 
-    private List<ScalpelFrameLayout> mPOIList = new ArrayList<>();
+    private List<FloatingFrameLayout> mPOIList = new ArrayList<>();
 
     // ========================================================================
     // =======================    H  A  N  D  L  E  R   =======================
@@ -85,13 +103,15 @@ public class MainActivity extends AppCompatActivity{
         mTextLat = (TextView) findViewById(R.id.latitude);
         mTextLon = (TextView) findViewById(R.id.longitude);
 
+        initDrawer();
+
         mLoadingContainer = (RelativeLayout) findViewById(R.id.loading_container);
 
-        mPositionContainer = (LinearLayout) findViewById(R.id.location_container);
+        mPositionContainer = (RelativeLayout) findViewById(R.id.location_container);
 
         setLocationViews(App.getLastLocation());
 
-        if (arePermissionsGranted()){
+        if (arePermissionsGranted()) {
             initArViews();
         } else {
             requestPermissions();
@@ -104,7 +124,30 @@ public class MainActivity extends AppCompatActivity{
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-//        mMapBoxView.onSaveInstanceState(outState);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_KML_FILE && resultCode == Activity.RESULT_OK) {
+            // The document selected by the user won't be returned in the intent.
+            // Instead, a URI to that document will be contained in the return intent
+            // provided to this method as a parameter.
+            // Pull that URI using resultData.getData().
+            Uri uri = null;
+            if (data != null) {
+                uri = data.getData();
+                ARLog.d("[%s]::[uri loaded: %s]", TAG, uri.toString());
+
+                try {
+                    InputStream inputStream = getContentResolver().openInputStream(uri);
+                    List<Placemark> placemarks = KMLParser.parseFile(inputStream);
+                    loadPlacemarks(placemarks);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
     }
 
     @Override
@@ -116,11 +159,21 @@ public class MainActivity extends AppCompatActivity{
     @Override
     protected void onResume() {
         super.onResume();
+        if (mArViewPane != null && mArDisplay != null /*&& mArViewPane.indexOfChild(mArDisplay) < 0*/) {
+            mArViewPane.setVisibility(View.VISIBLE);
+            mArDisplay.setVisibility(View.VISIBLE);
+//            mArViewPane.addView(mArDisplay);
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        if (mArViewPane != null && mArDisplay != null) {
+            mArViewPane.setVisibility(View.GONE);
+            mArDisplay.setVisibility(View.GONE);
+//            mArViewPane.removeView(mArDisplay);
+        }
     }
 
     @Override
@@ -148,18 +201,18 @@ public class MainActivity extends AppCompatActivity{
     @SuppressWarnings("unused")
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(final OrientationMsgEvt event) {
-        if(!mPOIList.isEmpty()){
-            for (ScalpelFrameLayout sfl : mPOIList) {
+        if (!mPOIList.isEmpty()) {
+            for (FloatingFrameLayout sfl : mPOIList) {
                 sfl.setLastOrientation(event.getValues());
             }
         }
 
-        if(mOverlayView != null){
+        if (mOverlayView != null) {
             mOverlayView.setLastOrientation(event.getValues());
         }
 
-        if(mTextBea != null){
-            mTextBea.setText(String.format(Locale.getDefault(),"azimuth: %.2f",event.getValues()[0]));
+        if (mTextBea != null) {
+            mTextBea.setText(String.format(Locale.getDefault(), "azimuth: %.2f", event.getCurrentBearing()));
         }
     }
 
@@ -177,15 +230,15 @@ public class MainActivity extends AppCompatActivity{
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onMessageEvent(final LocationMsgEvt event) {
         setLocationViews(event.getLocation());
-        if(!mPOIList.isEmpty()){
-            for (ScalpelFrameLayout sfl : mPOIList) {
+        if (!mPOIList.isEmpty()) {
+            for (FloatingFrameLayout sfl : mPOIList) {
                 sfl.calculateDistance();
             }
         }
     }
 
-    private void setLocationViews(Location location){
-        if(location == null) {
+    private void setLocationViews(Location location) {
+        if (location == null) {
             if (mLoadingContainer != null) {
                 mLoadingContainer.setVisibility(View.VISIBLE);
             }
@@ -198,8 +251,8 @@ public class MainActivity extends AppCompatActivity{
             }
             if (mTextLat != null && mTextLon != null && mTextBea != null) {
                 mPositionContainer.setVisibility(View.VISIBLE);
-                mTextLat.setText(String.format(Locale.getDefault(),"lat: %.4f",location.getLatitude()));
-                mTextLon.setText(String.format(Locale.getDefault(),"lon: %.4f",location.getLongitude()));
+                mTextLat.setText(String.format(Locale.getDefault(), "lat: %.4f", location.getLatitude()));
+                mTextLon.setText(String.format(Locale.getDefault(), "lon: %.4f", location.getLongitude()));
             }
         }
     }
@@ -236,27 +289,81 @@ public class MainActivity extends AppCompatActivity{
     // --- /||\ ------------------------------------------------------ \||/ ---
     // ---  ||  ---------------------------- H E L P   F U N C T I O N  \/  ---
     // ------------------------------------------------------------------------
-    private void initArViews(){
+
+    private void initDrawer() {
+        mMenuBtn = (ImageButton) findViewById(R.id.menu_btn);
+
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mNavigationDrawer = (NavigationView) findViewById(R.id.nav_drawer);
+
+        String[] menuItems = {"Load from file", "Load from URL", "View distance", "Noise filter", "Sensor calibration"};
+
+        mMenuBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(mDrawerLayout.isDrawerOpen(Gravity.LEFT)) {
+                    mDrawerLayout.closeDrawer(Gravity.LEFT);
+                } else {
+                    mDrawerLayout.openDrawer(Gravity.LEFT);
+                }
+            }
+        });
+
+        // Set the adapter for the list view
+        mNavigationDrawer.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                int id = item.getItemId();
+                if(id == R.id.menu_item_load_kml){
+                    // ACTION_OPEN_DOCUMENT is the intent to choose a file via the system's file
+                    // browser.
+                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+
+                    // Filter to only show results that can be "opened", such as a
+                    // file (as opposed to a list of contacts or timezones)
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+                    // Filter to show only images, using the image MIME data type.
+                    // If one wanted to search for ogg vorbis files, the type would be "audio/ogg".
+                    // To search for all documents available via installed storage providers,
+                    // it would be "*/*".
+                    intent.setType("application/vnd.google-earth.kml+xml");
+
+                    startActivityForResult(intent, REQUEST_KML_FILE);
+
+                } else if(id == R.id.menu_item_view_distance) {
+
+                } else if(id == R.id.menu_item_sensor_filter) {
+
+                }
+                mDrawerLayout.closeDrawer(Gravity.LEFT);
+                return true;
+
+            }
+        });
+    }
+
+    private void initArViews() {
 
         mArViewPane = (FrameLayout) findViewById(R.id.ar_view_pane);
         mArDisplay = new ArDisplayView(MainActivity.this);
         mArViewPane.addView(mArDisplay);
         mOverlayView = new OverlayView(getApplicationContext());
         mArViewPane.addView(mOverlayView);
-
-        ScalpelFrameLayout sfl = new ScalpelFrameLayout(this,
-                App.front, "Front", "-");
-        sfl.calculateDistance();
-        mPOIList.add(sfl);
-
-        ScalpelFrameLayout sfl2 = new ScalpelFrameLayout(this,
-                App.vut, "Left", "-");
-        sfl2.calculateDistance();
-        mPOIList.add(sfl2);
-
-        mArViewPane.addView(sfl);
-        mArViewPane.addView(sfl2);
     }
+
+    private void loadPlacemarks(List<Placemark> placemarks) {
+        if(mArViewPane != null)
+            for (Placemark placemark : placemarks) {
+                FloatingFrameLayout sfl = new FloatingFrameLayout(this);
+                sfl.loadPlacemark(placemark);
+                sfl.calculateDistance();
+                mPOIList.add(sfl);
+
+                mArViewPane.addView(sfl);
+            }
+    }
+
     private boolean arePermissionsGranted() {
 
         boolean camera;
@@ -269,10 +376,10 @@ public class MainActivity extends AppCompatActivity{
         return (camera && coarseLocation && fineLocation);
     }
 
-    private void requestPermissions(){
+    private void requestPermissions() {
 
         if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.CAMERA) || ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.CAMERA) || ActivityCompat.shouldShowRequestPermissionRationale(this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
 
             ARLog.e("[%s]::[onCreate]::[shouldShowRequestPermissionRationale]", TAG);
@@ -292,24 +399,4 @@ public class MainActivity extends AppCompatActivity{
                     REQUEST_WRITE_EXTERNAL_STORAGE);
         }
     }
-
-    @Override
-    public void onBackPressed() {
-//        super.onBackPressed();
-    }
-
-    public static void call(Activity activity)
-    {
-        // Creating an intent with the current activity and the activity we wish to start
-        Intent myIntent = new Intent(activity, MainActivity.class);
-        activity.startActivity(myIntent);
-    }
-
-    public static String Testcall()
-    {
-        return "android string returned";
-    }
-
-
-
 }
